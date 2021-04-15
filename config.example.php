@@ -1,17 +1,21 @@
 <?php
 
 // Organisation
-define ( 'BLOTTO_PAY_API_CLASS_PAYPAL', '/path/to/paypal-api/PayApi.php'   );
-define ( 'PAYPAL_EMAIL',            'paypal.account@my.domain'             );
-define ( 'PAYPAL_ERROR_LOG',        false                                  );
-define ( 'PAYPAL_CNFM_EM',          true                ); // User must confirm email address
-define ( 'PAYPAL_CNFM_PH',          false               ); // User must confirm phone number
-define ( 'PAYPAL_CMPLN_EM',         true                ); // Send completion message by email
-define ( 'PAYPAL_CMPLN_PH',         false               ); // Send completion message by SMS
-define ( 'PAYPAL_VOODOOSMS',        '/home/blotto/voodoosms/SMS.php'    );
+define ( 'BLOTTO_PAY_API_CLASS_PAYPAL',    '/path/to/paypal-api/PayApi.php' );
+define ( 'PAYPAL_ADMIN_EMAIL',              'paypal.support@my.biz'         );
+define ( 'PAYPAL_ADMIN_PHONE',              '01 234 567 890'                );
+define ( 'PAYPAL_TERMS' ,                   'https://my.biz/terms'          );
+define ( 'PAYPAL_PRIVACY' ,                 'https://my.biz/privacy'        );
+define ( 'PAYPAL_EMAIL',                    'paypal.account@my.domain'      );
+define ( 'PAYPAL_ERROR_LOG',                false               );
+define ( 'PAYPAL_CNFM_EM',                  true                ); // User must confirm email address
+define ( 'PAYPAL_CNFM_PH',                  false               ); // User must confirm phone number
+define ( 'PAYPAL_CMPLN_EM',                 true                ); // Send completion message email
+define ( 'PAYPAL_CMPLN_PH',                 false               ); // Send completion message SMS
+define ( 'PAYPAL_VOODOOSMS',                '/home/blotto/voodoosms/SMS.php'    );
 define ( 'PAYPAL_CAMPAIGN_MONITOR', '/path/to/createsend-php/csrest_transactional_smartemail.php' );
 
-define ( 'CAMPAIGN_MONITOR_KEY',    '' );
+define ( 'CAMPAIGN_MONITOR_KEY',            '' );
 define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', '' );
 
 
