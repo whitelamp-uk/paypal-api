@@ -1,7 +1,8 @@
 <?php
 
 // Organisation
-define ( 'BLOTTO_PAY_API_CLASS_PAYPAL',    '/path/to/paypal-api/PayApi.php' );
+define ( 'BLOTTO_PAY_API_PAYPAL',           '/some/paypal-api/PayApi.php'   );
+define ( 'BLOTTO_PAY_API_PAYPAL_CLASS',     '\Blotto\Paypal\PayApi'         );
 define ( 'PAYPAL_ADMIN_EMAIL',              'paypal.support@my.biz'         );
 define ( 'PAYPAL_ADMIN_PHONE',              '01 234 567 890'                );
 define ( 'PAYPAL_TERMS' ,                   'https://my.biz/terms'          );

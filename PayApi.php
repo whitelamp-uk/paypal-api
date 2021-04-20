@@ -1,5 +1,7 @@
 <?php
 
+namespace Blotto\Paypal
+
 class PayApi {
 
     private  $connection;
@@ -65,7 +67,7 @@ class PayApi {
                 // Send confirmation SMS
                 if (PAYPAL_CMPLN_PH) {
                     $step = 'Confirmation SMS';
-                    $sms        = new SMS ();
+                    $sms        = new \SMS ();
                     $details    = sms_message ();
                     $sms->send ($_POST['mobile'],$details['message'],$details['from']);
                 }
@@ -87,11 +89,11 @@ class PayApi {
     }
 
     private function campaign_monitor ($ref,$tickets,$first_draw_close,$draws) {
-        $cm         = new CS_REST_Transactional_SmartEmail (
+        $cm         = new \CS_REST_Transactional_SmartEmail (
             CAMPAIGN_MONITOR_SMART_EMAIL_ID,
             array ('api_key' => CAMPAIGN_MONITOR_KEY)
         );
-        $first      = new DateTime ($first_draw_close);
+        $first      = new \DateTime ($first_draw_close);
         $first->add ('P1D');
         $first      = $first->format ('l jS F Y');
         $name       = str_replace (':','',$_POST['first_name']);
@@ -201,7 +203,7 @@ class PayApi {
     }
 
     public function import ($from) {
-        $from               = new DateTime ($from);
+        $from               = new \DateTime ($from);
         $this->from         = $from->format ('Y-m-d');
         $this->execute (__DIR__.'/create_payment.sql');
         $this->output_mandates ();
@@ -286,7 +288,7 @@ class PayApi {
     }
 
     private function sms_message ( ) {
-        $mysqli = new mysqli (PAYPAL_DB_HOST,PAYPAL_DB_USERNAME,PAYPAL_DB_PASSWORD,PAYPAL_DB_DATABASE);
+        $mysqli = new \mysqli (PAYPAL_DB_HOST,PAYPAL_DB_USERNAME,PAYPAL_DB_PASSWORD,PAYPAL_DB_DATABASE);
         if ($mysqli->connect_errno) {
             throw new \Exception ($mysqli->connecterror);
             return false;
@@ -322,8 +324,8 @@ class PayApi {
             "email" => $email,
             "level" => PAYPAL_EMAIL_VERIFY_LEVEL,
         );
-        $client = new SoapClient("https://webservices.data-8.co.uk/EmailValidation.asmx?WSDL");
-        $result = $client->IsValid($params);
+        $client = new \SoapClient ("https://webservices.data-8.co.uk/EmailValidation.asmx?WSDL");
+        $result = $client->IsValid ($params);
         if ($result->IsValidResult->Status->Success == false) {
             throw new \Exception ("Error trying to validate email: ".$result->Status->ErrorMessage);
             return false;
@@ -360,13 +362,13 @@ class PayApi {
             throw new \Exception ('Date of birth is required');
             return false;
         }
-        $dt             = new DateTime ($_POST['dob']);
+        $dt             = new \DateTime ($_POST['dob']);
         if (!$dt) {
             define ( 'PAYPAL_GO', 'about');
             throw new \Exception ('Date of birth is not valid');
             return false;
         }
-        $now        = new DateTime ();
+        $now        = new \DateTime ();
         $years      = $dt->diff($now)->format ('%r%y');
         if ($years<18) {
             throw new \Exception ('You must be 18 or over to sign up');
@@ -429,7 +431,7 @@ class PayApi {
         );
         $params['options']['Option'][] =  array("Name" => "UseMobileValidation", "Value" => false);
         $params['options']['Option'][] =  array("Name" => "UseLineValidation", "Value" => false);
-        $client = new SoapClient("https://webservices.data-8.co.uk/InternationalTelephoneValidation.asmx?WSDL");
+        $client = new \SoapClient ("https://webservices.data-8.co.uk/InternationalTelephoneValidation.asmx?WSDL");
         $result = $client->IsValid($params);
         if ($result->IsValidResult->Status->Success == false) {
             throw new \Exception ("Error trying to validate phone number: ".$result->Status->ErrorMessage);
