@@ -3,6 +3,8 @@
 // Organisation
 define ( 'BLOTTO_PAY_API_PAYPAL',           '/some/paypal-api/PayApi.php'   );
 define ( 'BLOTTO_PAY_API_PAYPAL_CLASS',     '\Blotto\Paypal\PayApi'         );
+define ( 'BLOTTO_PAY_API_PAYPAL_CODE',      'PYPL'              );
+define ( 'PAYPAL_CODE',                     BLOTTO_PAY_API_PAYPAL_CODE      );
 define ( 'PAYPAL_ADMIN_EMAIL',              'paypal.support@my.biz'         );
 define ( 'PAYPAL_ADMIN_PHONE',              '01 234 567 890'                );
 define ( 'PAYPAL_TERMS' ,                   'https://my.biz/terms'          );
@@ -14,6 +16,9 @@ define ( 'PAYPAL_CNFM_PH',                  false               ); // User must 
 define ( 'PAYPAL_CMPLN_EM',                 true                ); // Send completion message email
 define ( 'PAYPAL_CMPLN_PH',                 false               ); // Send completion message SMS
 define ( 'PAYPAL_VOODOOSMS',                '/home/blotto/voodoosms/SMS.php'    );
+define ( 'PAYPAL_SMS_FROM',                 '11charLotto' );
+define ( 'PAYPAL_SMS_MESSAGE',              'Shall I compare thee to a Paypal transaction?' );
+
 define ( 'PAYPAL_CAMPAIGN_MONITOR', '/path/to/createsend-php/csrest_transactional_smartemail.php' );
 
 define ( 'CAMPAIGN_MONITOR_KEY',            '' );

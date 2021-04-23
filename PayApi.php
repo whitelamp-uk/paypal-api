@@ -6,16 +6,19 @@ class PayApi {
 
     private  $connection;
     public   $constants = [
-                 'PAYPAL_PROVIDER',
-                 'PAYPAL_TABLE_MANDATE',
-                 'PAYPAL_TABLE_COLLECTION',
+                 'PAYPAL_CODE',
+                 'PAYPAL_ADMIN_EMAIL',
+                 'PAYPAL_ADMIN_PHONE',
+                 'PAYPAL_TERMS' 
+                 'PAYPAL_PRIVACY' 
                  'PAYPAL_EMAIL',
                  'PAYPAL_ERROR_LOG',
                  'PAYPAL_CNFM_EM',
                  'PAYPAL_CNFM_PH',
-                 'PAYPAL_CCC',
                  'PAYPAL_CMPLN_EM',
-                 'PAYPAL_CMPLN_PH'
+                 'PAYPAL_CMPLN_PH',
+                 'PAYPAL_VOODOOSMS',
+                 'PAYPAL_CAMPAIGN_MONITOR'
              ];
     public   $database;
     public   $diagnostic;
@@ -50,11 +53,11 @@ class PayApi {
         try {
             // Update paypal_payment - `Paid`=NOW(),`Created`=CURDATE()
             // Insert a supporter, a player and a contact
-            //     canvas code is PAYPAL_CCC
+            //     canvas code is PAYPAL_CODE
             //     canvas_ref is new insert ID
             //     RefNo == canvas_ref + 100000
-            //     Provider = PAYPAL_PROVIDER
-            //     ClientRef = PAYPAL_PROVIDER.Refno
+            //     Provider = PAYPAL_CODE
+            //     ClientRef = PAYPAL_CODE . Refno
             // Em olrait?
             // Assign tickets by updating blotto_ticket
             try {
@@ -288,33 +291,10 @@ class PayApi {
     }
 
     private function sms_message ( ) {
-        $mysqli = new \mysqli (PAYPAL_DB_HOST,PAYPAL_DB_USERNAME,PAYPAL_DB_PASSWORD,PAYPAL_DB_DATABASE);
-        if ($mysqli->connect_errno) {
-            throw new \Exception ($mysqli->connecterror);
-            return false;
-        }
-        $project_id = PAYPAL_PROJECT_ID;
-        $q = "
-          SELECT
-            `sms_from`
-           ,`sms_name`
-           ,`sms_phone`
-          FROM `projects`
-          WHERE `id`=$project_id
-        ";
-        $ps = $mysqli->query ($q);
-        if (!$ps) {
-            throw new \Exception ($mysqli->error);
-            return false;
-        }
-        if (!($p=$ps->fetch_assoc())) {
-            throw new \Exception ('Project ID '.$project_id.' not found');
-            return false;
-        }
-        $msg = PAYPAL_SMS_MESSAGE;
-        $msg = str_replace ('{{NAME}}',$p['sms_name'],$msg);
-        $msg = str_replace ('{{PHONE}}',$p['sms_phone'],$msg);
-        return array ('from'=>$p['sms_from'],'message'=>$msg);
+        return [
+            'from' => PAYPAL_SMS_FROM,
+            'message' => PAYPAL_SMS_MESSAGE
+        ];
     }
 
     private function verify_email ($email) {
