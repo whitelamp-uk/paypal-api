@@ -18,8 +18,8 @@ define ( 'PAYPAL_CMPLN_PH',                 false               ); // Send compl
 define ( 'PAYPAL_VOODOOSMS',                '/home/blotto/voodoosms/SMS.php'    );
 define ( 'PAYPAL_SMS_FROM',                 '11charLotto' );
 define ( 'PAYPAL_SMS_MESSAGE',              'Shall I compare thee to a Paypal transaction?' );
-
 define ( 'PAYPAL_CAMPAIGN_MONITOR', '/path/to/createsend-php/csrest_transactional_smartemail.php' );
+define ( 'PAYPAL_REFNO_OFFSET',             100000000 );
 
 define ( 'CAMPAIGN_MONITOR_KEY',            '' );
 define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', '' );
