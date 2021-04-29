@@ -42,7 +42,7 @@ class PayApi {
             // Send confirmation email
             if (PAYPAL_CMPLN_EM) {
                 $step = 'Confirmation email';
-                $this->campaign_monitor ($this->supporter);
+                campaign_monitor ($this->supporter);
             }
             // Send confirmation SMS
             if (PAYPAL_CMPLN_PH) {
@@ -70,38 +70,6 @@ class PayApi {
         return false;
     }
 
-    private function campaign_monitor ($ref,$tickets,$first_draw_close,$draws) {
-        if (!class_exists('\CS_REST_Transactional_SmartEmail')) {
-            throw new \Exception ('Class \CS_REST_Transactional_SmartEmail not found');
-            return false;
-        }
-        $cm         = new \CS_REST_Transactional_SmartEmail (
-            CAMPAIGN_MONITOR_SMART_EMAIL_ID,
-            array ('api_key' => CAMPAIGN_MONITOR_KEY)
-        );
-        $first      = new \DateTime ($first_draw_close);
-        $first->add ('P1D');
-        $first      = $first->format ('l jS F Y');
-        $name       = str_replace (':','',$_POST['first_name']);
-        $name      .= ' ';
-        $name      .= str_replace (':','',$_POST['last_name']);
-        $message    = array (
-            "To"    => $name.' <'.$_POST['email'].'>',
-            "Data"  => array (
-                'First_Name'    => $_POST['first_name'],
-                'Reference'     => $ref,
-                'Tickets'       => $tickets,
-                'First'         => $first,
-                'Draws'         => $draws,
-            )
-        );
-        $result     = $cm->send (
-            $message,
-            'unchanged'
-        );
-        // error_log ('Campaign Monitor result: '.print_r($result,true));
-    }
-
     private function complete ($txn_ref) {
         try {
             $this->connection->query (
@@ -113,6 +81,10 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
+    }
+
+    private function cref ($id) {
+        return PAYPAL_CODE.'_'.$this->refno($id);
     }
 
     private function error_log ($code,$message) {
@@ -176,6 +148,10 @@ class PayApi {
         }
     }
 
+    private function refno ($id) {
+        return PAYPAL_REFNO_OFFSET + $id;
+    }
+
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
@@ -224,59 +200,12 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
-        $ccc        = PAYPAL_CODE;
-        $provider   = PAYPAL_CODE;
-        $refno      = PAYPAL_REFNO_OFFSET + $s['id'];
-        $cref       = PAYPAL_CODE.'_'.$refno;
-        // Insert a supporter, a player and a contact
         try {
-            $this->connection->query (
-              "
-                INSERT INTO `blotto_supporter` SET
-                  `created`=DATE('{$s['created']}')
-                 ,`signed`=DATE('{$s['created']}')
-                 ,`approved`=DATE('{$s['created']}')
-                 ,`canvas_code`='$ccc'
-                 ,`canvas_agent_ref`='$ccc'
-                 ,`canvas_ref`='{$s['id']}'
-                 ,`client_ref`='$cref'
-              "
-            );
-            $sid = $this->connection->lastInsertId ();
-            $this->connection->query (
-              "
-                INSERT INTO `blotto_player` SET
-                 ,`started`=DATE('{$s['created']}')
-                 ,`supporter_id`=$sid
-                 ,`client_ref`='$cref'
-                 ,`chances`={$s['quantity']}
-              "
-            );
-            $this->connection->query (
-              "
-                INSERT INTO `blotto_contact` SET
-                  `supporter_id`=$sid
-                 ,`title`='{$s['title']}'
-                 ,`name_first`='{$s['first_name']}'
-                 ,`name_last`='{$s['last_name']}'
-                 ,`email`='{$s['email']}'
-                 ,`mobile`='{$s['mobile']}'
-                 ,`telephone`='{$s['telephone']}'
-                 ,`address_1`='{$s['address_1']}'
-                 ,`address_2`='{$s['address_2']}'
-                 ,`address_3`='{$s['address_3']}'
-                 ,`town`='{$s['town']}'
-                 ,`county`='{$s['county']}'
-                 ,`postcode`='{$s['postcode']}'
-                 ,`dob`='{$s['dob']}'
-                 ,`p0`='{$s['pref_1']}'
-                 ,`p1`='{$s['pref_2']}'
-                 ,`p2`='{$s['pref_3']}'
-                 ,`p3`='{$s['pref_4']}'
-              "
-            );
-            // I guess we have to add tickets here so that they can be emailed/texted
-            $tickets = [];
+            // Insert a supporter, a player and a contact
+            $cref = $this->cref ($s['id']);
+            signup ($s,PAYPAL_CODE,$cref);
+            // Add tickets here so that they can be emailed/texted
+            $tickets = tickets (PAYPAL_CODE,$this->refno($s['id']),$cref,$s['chances']);
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (121,'SQL insert failed: '.$e->getMessage());
@@ -284,8 +213,10 @@ class PayApi {
             return false;
         }
         return [
+            'Email'         => $s['email'],
             'Mobile'        => $s['first_name'],
             'First_Name'    => $s['first_name'],
+            'Last_Name'     => $s['last_name'],
             'Reference'     => $cref,
             'Chances'       => $s['quantity'],
             'Tickets'       => explode (',',$tickets),
