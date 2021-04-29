@@ -12,11 +12,10 @@ class PayApi {
                  'PAYPAL_TERMS',
                  'PAYPAL_PRIVACY',
                  'PAYPAL_EMAIL',
+                 'PAYPAL_CMPLN_EML',
+                 'PAYPAL_CMPLN_MOB',
                  'PAYPAL_ERROR_LOG',
-                 'PAYPAL_CNFM_EM',
-                 'PAYPAL_CNFM_PH',
-                 'PAYPAL_CMPLN_EM',
-                 'PAYPAL_CMPLN_PH'
+                 'PAYPAL_REFNO_OFFSET'
              ];
     public   $database;
     public   $diagnostic;
@@ -36,30 +35,24 @@ class PayApi {
     public function callback ( ) {
         try {
             $error = null;
-            $step = null;
+            $step = 1;
             $this->complete ($txn_ref);
+            $step = 2;
             $this->supporter = $this->supporter_add ($txn_ref);
-            // Send confirmation email
-            if (PAYPAL_CMPLN_EM) {
-                $step = 'Confirmation email';
+            if (PAYPAL_CMPLN_EML) {
+                $step = 3;
                 campaign_monitor ($this->supporter);
             }
-            // Send confirmation SMS
-            if (PAYPAL_CMPLN_PH) {
-                if (!class_exists('\SMS')) {
-                    throw new \Exception ('Class \SMS not found');
-                    return false;
-                }
-                $step = 'Confirmation SMS';
-                $sms        = new \SMS ();
-                // Temporarily
+            if (PAYPAL_CMPLN_MOB) {
+                $step = 4;
+                // TODO: we need to build a proper message
                 $message    = print_r ($this->supporter,true);
-                $sms->send ($this->supporter['Mobile'],$message,PAYPAL_SMS_FROM);
+                sms ($this->supporter['Mobile'],$message,PAYPAL_SMS_FROM);
             }
             return true;
         }
         catch (\Exception $e) {
-            $error = "Error for txn=$txn_ref: {$e->getMessage()}";
+            $error = "Error for txn=$txn_ref, step=$step: {$e->getMessage()}";
         }
         error_log ($error);
         mail (
@@ -176,13 +169,6 @@ class PayApi {
     public function start ( ) {
         // Insert into paypal_payment leaving especially `Paid` and `Created` as null
         // $this->txn_ref = something unique to go in button
-    }
-
-    private function sms_message ( ) {
-        return [
-            'from' => PAYPAL_SMS_FROM,
-            'message' => PAYPAL_SMS_MESSAGE
-        ];
     }
 
     private function supporter_add ($txn_ref) {
