@@ -1,6 +1,6 @@
 <?php
 
-namespace Blotto\Paypal
+namespace Blotto\Paypal;
 
 class PayApi {
 
@@ -9,23 +9,21 @@ class PayApi {
                  'PAYPAL_CODE',
                  'PAYPAL_ADMIN_EMAIL',
                  'PAYPAL_ADMIN_PHONE',
-                 'PAYPAL_TERMS' 
-                 'PAYPAL_PRIVACY' 
+                 'PAYPAL_TERMS',
+                 'PAYPAL_PRIVACY',
                  'PAYPAL_EMAIL',
                  'PAYPAL_ERROR_LOG',
                  'PAYPAL_CNFM_EM',
                  'PAYPAL_CNFM_PH',
                  'PAYPAL_CMPLN_EM',
-                 'PAYPAL_CMPLN_PH',
-                 'PAYPAL_VOODOOSMS',
-                 'PAYPAL_CAMPAIGN_MONITOR'
+                 'PAYPAL_CMPLN_PH'
              ];
     public   $database;
     public   $diagnostic;
     public   $error;
     public   $errorCode = 0;
     private  $from;
-    public   $tickets = [];
+    public   $supporter = [];
 
     public function __construct ($connection) {
         $this->connection = $connection;
@@ -35,37 +33,33 @@ class PayApi {
     public function __destruct ( ) {
     }
 
-    public function button ( ) {
-        if ($this->txn_ref) {
-            require __DIR__.'/button.php';
-        }
-    }
-
     public function callback ( ) {
         try {
             $error = null;
             $step = null;
-            // Do Paypal stuff
             $this->complete ($txn_ref);
-            $this->supporter_add ($txn_ref);
-            // Say OK back to Paypal
+            $this->supporter = $this->supporter_add ($txn_ref);
             // Send confirmation email
             if (PAYPAL_CMPLN_EM) {
                 $step = 'Confirmation email';
-                $this->campaign_monitor ($supporter_nr,$tickets,$first_draw_close,$draws);
+                $this->campaign_monitor ($this->supporter);
             }
             // Send confirmation SMS
             if (PAYPAL_CMPLN_PH) {
+                if (!class_exists('\SMS')) {
+                    throw new \Exception ('Class \SMS not found');
+                    return false;
+                }
                 $step = 'Confirmation SMS';
                 $sms        = new \SMS ();
-                $details    = sms_message ();
-                $sms->send ($_POST['mobile'],$details['message'],$details['from']);
+                // Temporarily
+                $message    = print_r ($this->supporter,true);
+                $sms->send ($this->supporter['Mobile'],$message,PAYPAL_SMS_FROM);
             }
             return true;
         }
         catch (\Exception $e) {
             $error = "Error for txn=$txn_ref: {$e->getMessage()}";
-            // Now saySay FOOEY back to Paypal
         }
         error_log ($error);
         mail (
@@ -77,6 +71,10 @@ class PayApi {
     }
 
     private function campaign_monitor ($ref,$tickets,$first_draw_close,$draws) {
+        if (!class_exists('\CS_REST_Transactional_SmartEmail')) {
+            throw new \Exception ('Class \CS_REST_Transactional_SmartEmail not found');
+            return false;
+        }
         $cm         = new \CS_REST_Transactional_SmartEmail (
             CAMPAIGN_MONITOR_SMART_EMAIL_ID,
             array ('api_key' => CAMPAIGN_MONITOR_KEY)
@@ -105,7 +103,16 @@ class PayApi {
     }
 
     private function complete ($txn_ref) {
-        // Update paypal_payment - `Paid`=NOW() where txn_ref=...
+        try {
+            $this->connection->query (
+                "UPDATE `paypal_payment` SET `paid`=NOW() WHERE `txn_ref`='$txn_ref' LIMIT 1"
+            );
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
     }
 
     private function error_log ($code,$message) {
@@ -204,11 +211,11 @@ class PayApi {
 
     private function supporter_add ($txn_ref) {
         try {
-            $supporter = $this->connection->query (
-              "SELECT * FROM `stripe_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
+            $s = $this->connection->query (
+              "SELECT * FROM `paypal_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
             );
-            $supporter = $supporter->fetch_assoc ();
-            if (!$supporter) {
+            $s = $s->fetch_assoc ();
+            if (!$s) {
                 throw new \Exception ("Transaction reference '$txn_ref' was not identified");
             }
         }
@@ -217,21 +224,21 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
-        $ccc        = STRIPE_CODE;
-        $provider   = STRIPE_CODE;
-        $refno      = STRIPE_REFNO_OFFSET + $supporter['id'];
-        $cref       = STRIPE_CODE.'_'.$refno;
+        $ccc        = PAYPAL_CODE;
+        $provider   = PAYPAL_CODE;
+        $refno      = PAYPAL_REFNO_OFFSET + $s['id'];
+        $cref       = PAYPAL_CODE.'_'.$refno;
         // Insert a supporter, a player and a contact
         try {
             $this->connection->query (
               "
                 INSERT INTO `blotto_supporter` SET
-                  `created`=DATE('{$['created']}')
-                 ,`signed`=DATE('{$['created']}')
-                 ,`approved`=DATE('{$['created']}')
+                  `created`=DATE('{$s['created']}')
+                 ,`signed`=DATE('{$s['created']}')
+                 ,`approved`=DATE('{$s['created']}')
                  ,`canvas_code`='$ccc'
                  ,`canvas_agent_ref`='$ccc'
-                 ,`canvas_ref`='{$['id']}'
+                 ,`canvas_ref`='{$s['id']}'
                  ,`client_ref`='$cref'
               "
             );
@@ -239,44 +246,53 @@ class PayApi {
             $this->connection->query (
               "
                 INSERT INTO `blotto_player` SET
-                 ,`started`=DATE('{$['created']}')
+                 ,`started`=DATE('{$s['created']}')
                  ,`supporter_id`=$sid
                  ,`client_ref`='$cref'
-                 ,`chances`={$['quantity']}
+                 ,`chances`={$s['quantity']}
               "
             );
             $this->connection->query (
               "
                 INSERT INTO `blotto_contact` SET
                   `supporter_id`=$sid
-                 ,`title`='{$['title']}'
-                 ,`name_first`='{$['first_name']}'
-                 ,`name_last`='{$['last_name']}'
-                 ,`email`='{$['email']}'
-                 ,`mobile`='{$['mobile']}'
-                 ,`telephone`='{$['telephone']}'
-                 ,`address_1`='{$['address_1']}'
-                 ,`address_2`='{$['address_2']}'
-                 ,`address_3`='{$['address_3']}'
-                 ,`town`='{$['town']}'
-                 ,`county`='{$['county']}'
-                 ,`postcode`='{$['postcode']}'
-                 ,`dob`='{$['dob']}'
-                 ,`p0`='{$['pref_1']}'
-                 ,`p1`='{$['pref_2']}'
-                 ,`p2`='{$['pref_3']}'
-                 ,`p3`='{$['pref_4']}'
+                 ,`title`='{$s['title']}'
+                 ,`name_first`='{$s['first_name']}'
+                 ,`name_last`='{$s['last_name']}'
+                 ,`email`='{$s['email']}'
+                 ,`mobile`='{$s['mobile']}'
+                 ,`telephone`='{$s['telephone']}'
+                 ,`address_1`='{$s['address_1']}'
+                 ,`address_2`='{$s['address_2']}'
+                 ,`address_3`='{$s['address_3']}'
+                 ,`town`='{$s['town']}'
+                 ,`county`='{$s['county']}'
+                 ,`postcode`='{$s['postcode']}'
+                 ,`dob`='{$s['dob']}'
+                 ,`p0`='{$s['pref_1']}'
+                 ,`p1`='{$s['pref_2']}'
+                 ,`p2`='{$s['pref_3']}'
+                 ,`p3`='{$s['pref_4']}'
               "
             );
+            // I guess we have to add tickets here so that they can be emailed/texted
+            $tickets = [];
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (121,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
+        return [
+            'Mobile'        => $s['first_name'],
+            'First_Name'    => $s['first_name'],
+            'Reference'     => $cref,
+            'Chances'       => $s['quantity'],
+            'Tickets'       => explode (',',$tickets),
+            'Draws'         => $s['draws'],
+            'First_Draw'    => draw_first ($s['created'],PAYPAL_CODE)
+        ];
     }
 
 }
-
-require_once PAYPAL_CAMPAIGN_MONITOR;
 
