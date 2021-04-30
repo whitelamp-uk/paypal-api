@@ -6,7 +6,7 @@ SELECT
  ,`TransactionRef`
  ,`ClientRef`
  ,`Amount`
-FROM `pponce_payment`
+FROM `paypal_payment`
 WHERE `Created` IS NOT NULL
   AND `Created`>='{{PAYPAL_FROM}}'
 ORDER BY `id`
