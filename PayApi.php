@@ -12,6 +12,7 @@ class PayApi {
                  'PAYPAL_TERMS',
                  'PAYPAL_PRIVACY',
                  'PAYPAL_EMAIL',
+                 'PAYPAL_CMPLN_EML_CM_ID',
                  'PAYPAL_CMPLN_EML',
                  'PAYPAL_CMPLN_MOB',
                  'PAYPAL_ERROR_LOG',
@@ -41,7 +42,7 @@ class PayApi {
             $this->supporter = $this->supporter_add ($txn_ref);
             if (PAYPAL_CMPLN_EML) {
                 $step = 3;
-                campaign_monitor ($this->supporter);
+                campaign_monitor (PAYPAL_CMPLN_EML_CM_ID,$this->supporter);
             }
             if (PAYPAL_CMPLN_MOB) {
                 $step = 4;
