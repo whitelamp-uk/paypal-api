@@ -135,7 +135,7 @@ class PayApi {
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".PAYPAL_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
-        $sql                = str_replace ('{{PAYPAL_FROM}}',$this->from,$sql);
+        $sql                = $this->sql_instantiate ($sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
@@ -150,6 +150,7 @@ class PayApi {
     private function output_mandates ( ) {
         $sql                = "INSERT INTO `".PAYPAL_TABLE_MANDATE."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql                = $this->sql_instantiate ($sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
@@ -173,6 +174,12 @@ class PayApi {
                 return false;
             }
         }
+    }
+
+    private function sql_instantiate ($sql) {
+        $sql                = str_replace ('{{PAYPAL_FROM}}',$this->from,$sql);
+        $sql                = str_replace ('{{PAYPAL_CODE}}',PAYPAL_CODE,$sql);
+        return $sql;
     }
 
     public function start (&$e) {
