@@ -1,26 +1,38 @@
 
-
 -- A persistent table in BLOTTO_MAKE_DB
 CREATE TABLE IF NOT EXISTS `paypal_payment` (
   `id` INT (11) NOT NULL AUTO_INCREMENT,
   `txn_ref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
-  `client_ref` varchar(255) CHARACTER SET ascii NOT NULL,
-  `initialised` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `paid` datetime DEFAULT NULL,
-  `created` date DEFAULT NULL,
-  `chances` tinyint(3) NOT NULL,
+  `refno` bigint(20) unsigned DEFAULT NULL,
+  `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
+  `quantity` tinyint(3) unsigned NOT NULL,
+  `draws` tinyint(3) unsigned NOT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
-  `name` varchar(255) DEFAULT NULL,
+  `title` varchar(255) NOT NULL,
+  `first_name` varchar(255) NOT NULL,
+  `last_name` varchar(255) NOT NULL,
+  `dob` date NOT NULL,
+  `email` varchar(255) CHARACTER SET ascii NOT NULL,
+  `mobile` varchar(255) CHARACTER SET ascii NOT NULL,
+  `telephone` varchar(255) CHARACTER SET ascii NOT NULL,
+  `postcode` varchar(255) CHARACTER SET ascii NOT NULL,
+  `address_1` varchar(255) NOT NULL,
+  `address_2` varchar(255) NOT NULL,
+  `address_3` varchar(255) NOT NULL,
+  `town` varchar(255) NOT NULL,
+  `county` varchar(255) NOT NULL,
+  `gdpr` tinyint(1) unsigned NOT NULL,
+  `terms` tinyint(1) unsigned NOT NULL,
   `pref_1` varchar(255) NOT NULL,
   `pref_2` varchar(255) NOT NULL,
   `pref_3` varchar(255) NOT NULL,
   `pref_4` varchar(255) NOT NULL,
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `transaction_ref` (`transaction_ref`),
-  UNIQUE KEY `client_ref` (`client_ref`),
-  KEY `initialised` (`initialised`),
+  UNIQUE KEY `txn_ref` (`txn_ref`),
   KEY `created` (`created`),
-  KEY `amount` (`amount`)
+  KEY `paid` (`paid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 ;
 

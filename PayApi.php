@@ -33,15 +33,26 @@ class PayApi {
     public function __destruct ( ) {
     }
 
-    public function callback ( ) {
+    public function callback ($sms_msg,&$responded) {
+        $responded          = false;
+        $error              = null;
+        $txn_ref            = null;
         try {
-            $error = null;
+            $step           = 0;
+            // Echo the callback back to Paypal
+            // Throw an exception of anything goes wrong at this point
+            // Then interpret the request to get the reference:
+            $txn_ref        = blah;
             $step = 1;
             $this->complete ($txn_ref);
-            $step = 2;
+            // The payment is now recorded at this end
+            http_response_code (200);
+            $responded      = true;
+            echo "Transaction completed\n";
+            $step           = 2;
             $this->supporter = $this->supporter_add ($txn_ref);
             if (PAYPAL_CMPLN_EML) {
-                $step = 3;
+                $step       = 3;
                 campaign_monitor (
                     PAYPAL_CMPLN_EML_CM_ID,
                     $this->supporter['To'],
@@ -49,29 +60,33 @@ class PayApi {
                 );
             }
             if (PAYPAL_CMPLN_MOB) {
-                $step = 4;
-                // TODO: we need to build a proper message
-                $message    = print_r ($this->supporter,true);
-                sms ($this->supporter['Mobile'],$message,PAYPAL_SMS_FROM);
+                $step       = 4;
+                foreach ($this->supporter as $k=>$v) {
+                    $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
+                }
+                sms ($this->supporter['Mobile'],$sms_msg,PAYPAL_SMS_FROM);
             }
             return true;
         }
         catch (\Exception $e) {
-            $error = "Error for txn=$txn_ref, step=$step: {$e->getMessage()}";
+            error_log ($e->getMessage());
+            throw new \Exception ("txn=$txn_ref, step=$step: {$e->getMessage()}");
+            return false;
         }
-        error_log ($error);
-        mail (
-            PAYPAL_EMAIL_ERROR,
-            'Paypal sign-up callback error',
-            $error
-        );
-        return false;
     }
 
     private function complete ($txn_ref) {
         try {
             $this->connection->query (
-                "UPDATE `paypal_payment` SET `paid`=NOW() WHERE `txn_ref`='$txn_ref' LIMIT 1"
+              "
+                UPDATE `paypal_payment`
+                SET
+                  `paid`=NOW()
+                 ,`refno`={$this->refno()}
+                 ,`cref`='{$this->cref()}'
+                WHERE `txn_ref`='$txn_ref'
+                LIMIT 1
+              "
             );
         }
         catch (\mysqli_sql_exception $e) {
@@ -112,7 +127,7 @@ class PayApi {
     public function import ($from) {
         $from               = new \DateTime ($from);
         $this->from         = $from->format ('Y-m-d');
-        $this->execute (__DIR__.'/create_payment.sql');
+        $this->execute (__DIR__.'/create_payment.sql');  // this creates the table? Yes (if not exists)
         $this->output_mandates ();
         $this->output_collections ();
     }
@@ -124,7 +139,6 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
-            tee ("Ouput {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (126,'SQL insert failed: '.$e->getMessage());
@@ -139,7 +153,6 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
-            tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (125,'SQL insert failed: '.$e->getMessage());
@@ -156,36 +169,68 @@ class PayApi {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
                 $this->error_log (124,"$c not defined");
-                throw new \Exception ('Configuration error');
+                throw new \Exception ('Configuration error $c not defined');
                 return false;
             }
         }
-        $sql                = "SELECT DATABASE() AS `db`";
-        try {
-            $db             = $this->connection->query ($sql);
-            $db             = $db->fetch_assoc ();
-            $this->database = $db['db'];
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (123,'SQL select failed: '.$e->getMessage());
-            throw new \Exception ('SQL database error');
-            return false;
-        }
     }
 
-    public function start ( ) {
-        // Insert into paypal_payment leaving especially `Paid` and `Created` as null
-        // $this->txn_ref = something unique to go in button
+    public function start (&$e) {
+        $v = www_signup_vars ();
+        $v['txn_ref'] = bin2hex (random_bytes(16));
+        foreach ($v as $key => $val) {
+            $v[$key] = $this->connection->real_escape_string($val);
+        }
+        $amount = intval($v['quantity']) * intval($v['draws']) * BLOTTO_TICKET_PRICE;
+        $pounds_amount = $amount / 100;
+        // Insert into paypal_payment leaving especially `paid` as null
+        $sql = "
+          INSERT INTO `paypal_payment`
+          SET
+            `txn_ref`='{$v['txn_ref']}'
+           ,`quantity`='{$v['quantity']}'
+           ,`draws`='{$v['draws']}'
+           ,`amount`='{$pounds_amount}'
+           ,`title`='{$v['title']}'
+           ,`name_first`='{$v['first_name']}'
+           ,`name_last`='{$v['last_name']}'
+           ,`dob`='{$v['dob']}'
+           ,`email`='{$v['email']}'
+           ,`mobile`='{$v['mobile']}'
+           ,`telephone`='{$v['telephone']}'
+           ,`postcode`='{$v['postcode']}'
+           ,`address_1`='{$v['address_1']}'
+           ,`address_2`='{$v['address_2']}'
+           ,`address_3`='{$v['address_3']}'
+           ,`town`='{$v['town']}'
+           ,`county`='{$v['county']}'
+           ,`gdpr`='{$v['gdpr']}'
+           ,`terms`='{$v['terms']}'
+           ,`pref_1`='{$v['pref_1']}'
+           ,`pref_2`='{$v['pref_2']}'
+           ,`pref_3`='{$v['pref_3']}'
+           ,`pref_4`='{$v['pref_4']}
+          ;
+        ";
+        try {
+            $this->connection->query ($sql);
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL insert failed: '.$e->getMessage());
+            $e[] = 'Sorry something went wrong - please try later';
+            return;
+        }
+        require __DIR__.'/button.php';
     }
 
     private function supporter_add ($txn_ref) {
         try {
             $s = $this->connection->query (
-              "SELECT * FROM `paypal_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
+              "SELECT * FROM `paypal_payment` WHERE `id`='$txn_ref' LIMIT 0,1"
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
-                throw new \Exception ("Transaction reference '$txn_ref' was not identified");
+                throw new \Exception ("paypal_payment txn_ref '$txn_ref' was not found");
             }
         }
         catch (\mysqli_sql_exception $e) {
@@ -194,21 +239,21 @@ class PayApi {
             return false;
         }
         // Insert a supporter, a player and a contact
-        $cref               = $this->cref ($s['id']);
-        signup ($s,PAYPAL_CODE,$cref);
+        signup ($s,PAYPAL_CODE,$s['cref']);
         // Add tickets here so that they can be emailed/texted
-        $tickets            = tickets (PAYPAL_CODE,$this->refno($s['id']),$cref,$s['chances']);
+        $tickets            = tickets (PAYPAL_CODE,$s['refno'],$cref,$s['quantity']);
         $draw_first         = new \DateTime (draw_first($s['created'],PAYPAL_CODE));
-        $draw_first->add ('P1D');
+        $one_day_interval   = new \DateInterval('P1D');
+        $draw_first->add ($one_day_interval);
         return [
-            'To'            => $s['first_name'].' '.$s['last_name'].' <'.$s['email'].'>',
+            'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
             'Title'         => $s['title'],
-            'Name'          => $s['first_name'].' '.$s['last_name'],
+            'Name'          => $s['name_first'].' '.$s['name_last'],
             'Email'         => $s['email'],
-            'Mobile'        => $s['first_name'],
-            'First_Name'    => $s['first_name'],
-            'Last_Name'     => $s['last_name'],
-            'Reference'     => $cref,
+            'Mobile'        => $s['mobile'],
+            'First_Name'    => $s['name_first'],
+            'Last_Name'     => $s['name_last'],
+            'Reference'     => $s['cref'],
             'Chances'       => $s['quantity'],
             'Tickets'       => implode (',',$tickets),
             'Draws'         => $s['draws'],
