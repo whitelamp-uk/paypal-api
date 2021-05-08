@@ -124,6 +124,7 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Ouput {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (126,'SQL insert failed: '.$e->getMessage());
@@ -138,6 +139,7 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (125,'SQL insert failed: '.$e->getMessage());
