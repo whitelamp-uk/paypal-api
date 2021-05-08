@@ -6,17 +6,17 @@ class PayApi {
 
     private  $connection;
     public   $constants = [
-                 'PAYPAL_CODE',
-                 'PAYPAL_ADMIN_EMAIL',
-                 'PAYPAL_ADMIN_PHONE',
-                 'PAYPAL_TERMS',
-                 'PAYPAL_PRIVACY',
                  'PAYPAL_EMAIL',
-                 'PAYPAL_CMPLN_EML_CM_ID',
+                 'PAYPAL_CODE',
                  'PAYPAL_CMPLN_EML',
                  'PAYPAL_CMPLN_MOB',
                  'PAYPAL_ERROR_LOG',
-                 'PAYPAL_REFNO_OFFSET'
+                 'PAYPAL_REFNO_OFFSET',
+                 'PAYPAL_SMS_FROM',
+                 'PAYPAL_DEV_MODE',
+                 'PAYPAL_TABLE_MANDATE',
+                 'PAYPAL_TABLE_COLLECTION',
+                 'PAYPAL_CALLBACK_TO'
              ];
     public   $database;
     public   $diagnostic;
