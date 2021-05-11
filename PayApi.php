@@ -23,17 +23,19 @@ class PayApi {
     public   $error;
     public   $errorCode = 0;
     private  $from;
+    private  $org;
     public   $supporter = [];
 
-    public function __construct ($connection) {
-        $this->connection = $connection;
+    public function __construct ($connection,$org) {
+        $this->connection   = $connection;
+        $this->org          = $org;
         $this->setup ();
     }
 
     public function __destruct ( ) {
     }
 
-    public function callback ($sms_msg,&$responded) {
+    public function callback (&$responded) {
         $responded          = false;
         $error              = null;
         $txn_ref            = null;
@@ -61,6 +63,7 @@ class PayApi {
             }
             if (PAYPAL_CMPLN_MOB) {
                 $step       = 4;
+                $sms_msg    = $this->org['signup_sms_message'];
                 foreach ($this->supporter as $k=>$v) {
                     $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
                 }
