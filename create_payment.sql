@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS `paypal_payment` (
   `id` INT (11) NOT NULL AUTO_INCREMENT,
   `txn_ref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
-  `paid` datetime DEFAULT NULL,
+  `callback_at` datetime DEFAULT NULL,
   `refno` bigint(20) unsigned DEFAULT NULL,
   `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `quantity` tinyint(3) unsigned NOT NULL,

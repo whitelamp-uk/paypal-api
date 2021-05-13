@@ -51,6 +51,8 @@ class PayApi {
             http_response_code (200);
             $responded      = true;
             echo "Transaction completed\n";
+            // Paypal only does a callback on success
+            // Is this true?
             $step           = 2;
             $this->supporter = $this->supporter_add ($txn_ref);
             if (PAYPAL_CMPLN_EML) {
@@ -84,12 +86,15 @@ class PayApi {
     }
 
     private function complete ($txn_ref) {
+        // paypal_payment does not have a `failure_code` or `failure_message`
+        // because Paypal only does a callback on success
+        // is this true?
         try {
             $this->connection->query (
               "
                 UPDATE `paypal_payment`
                 SET
-                  `paid`=NOW()
+                  `callback_at`=NOW()
                  ,`refno`={$this->refno()}
                  ,`cref`='{$this->cref()}'
                 WHERE `txn_ref`='$txn_ref'

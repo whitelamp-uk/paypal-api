@@ -7,8 +7,7 @@ SELECT
  ,`cref`
  ,`amount`
 FROM `paypal_payment`
-WHERE `created` IS NOT NULL
-  AND `created`>='{{PAYPAL_FROM}}'
-  AND `paid` IS NOT NULL
+WHERE `created`>='{{PAYPAL_FROM}}'
+  AND `callback_at` IS NOT NULL
 ORDER BY `id`
 ;
