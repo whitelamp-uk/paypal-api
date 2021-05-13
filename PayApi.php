@@ -55,11 +55,16 @@ class PayApi {
             $this->supporter = $this->supporter_add ($txn_ref);
             if (PAYPAL_CMPLN_EML) {
                 $step       = 3;
-                campaign_monitor (
-                    PAYPAL_CMPLN_EML_CM_ID,
+                $result = campaign_monitor (
+                    $this->org['signup_cm_key'],
+                    $this->org['signup_cm_id'],
                     $this->supporter['To'],
                     $this->supporter
                 );
+                $ok = $result->http_status_code == 200;
+                if (!$ok) {
+                    throw new \Exception (print_r($result,true));
+                }
             }
             if (PAYPAL_CMPLN_MOB) {
                 $step       = 4;
