@@ -246,11 +246,19 @@ class PayApi {
     private function supporter_add ($txn_ref) {
         try {
             $s = $this->connection->query (
-              "SELECT * FROM `paypal_payment` WHERE `id`='$txn_ref' LIMIT 0,1"
+              "
+                SELECT
+                  `p`.*
+                 ,`p`.`created` AS `first_draw_close`
+                 ,drawOnOrAfter(`p`.`created`) AS `draw_first`
+                FROM `paypal_payment` AS `p`
+                WHERE `p`.`txn_ref`='$txn_ref'
+                LIMIT 0,1
+              "
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
-                throw new \Exception ("paypal_payment txn_ref '$txn_ref' was not found");
+                throw new \Exception ("paypal_payment.txn_ref='$txn_ref' was not found");
             }
         }
         catch (\mysqli_sql_exception $e) {
@@ -259,12 +267,10 @@ class PayApi {
             return false;
         }
         // Insert a supporter, a player and a contact
-        signup ($s,PAYPAL_CODE,$s['cref']);
+        signup ($s,PAYPAL_CODE,$s['cref'],$s['first_draw_close']);
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (PAYPAL_CODE,$s['refno'],$cref,$s['quantity']);
-        $draw_first         = new \DateTime (draw_first($s['created'],PAYPAL_CODE));
-        $one_day_interval   = new \DateInterval('P1D');
-        $draw_first->add ($one_day_interval);
+        $draw_first         = new \DateTime ($s['draw_first']);
         return [
             'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
             'Title'         => $s['title'],
