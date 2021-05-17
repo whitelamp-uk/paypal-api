@@ -8,11 +8,8 @@ class PayApi {
     public   $constants = [
                  'PAYPAL_EMAIL',
                  'PAYPAL_CODE',
-                 'PAYPAL_CMPLN_EML',
-                 'PAYPAL_CMPLN_MOB',
                  'PAYPAL_ERROR_LOG',
                  'PAYPAL_REFNO_OFFSET',
-                 'PAYPAL_SMS_FROM',
                  'PAYPAL_DEV_MODE',
                  'PAYPAL_TABLE_MANDATE',
                  'PAYPAL_TABLE_COLLECTION',
@@ -55,7 +52,7 @@ class PayApi {
             // Is this true?
             $step           = 2;
             $this->supporter = $this->supporter_add ($txn_ref);
-            if (PAYPAL_CMPLN_EML) {
+            if ($this->org['signup_paid_email']) {
                 $step       = 3;
                 $result = campaign_monitor (
                     $this->org['signup_cm_key'],
@@ -68,13 +65,13 @@ class PayApi {
                     throw new \Exception (print_r($result,true));
                 }
             }
-            if (PAYPAL_CMPLN_MOB) {
+            if ($this->org['signup_paid_sms']) {
                 $step       = 4;
                 $sms_msg    = $this->org['signup_sms_message'];
                 foreach ($this->supporter as $k=>$v) {
                     $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
                 }
-                sms ($this->supporter['Mobile'],$sms_msg,PAYPAL_SMS_FROM);
+                sms ($this->supporter['Mobile'],$sms_msg,$this->org['signup_sms_from']);
             }
             return true;
         }
