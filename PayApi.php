@@ -196,7 +196,11 @@ class PayApi {
         $v = www_signup_vars ();
         $v['txn_ref'] = bin2hex (random_bytes(16));
         foreach ($v as $key => $val) {
-            $v[$key] = $this->connection->real_escape_string($val);
+            if (preg_match('<^pref_>',$key)) {
+                $v[$key] = yes_or_no ($val,'Y','N');
+                continue;
+            }
+            $v[$key] = $this->connection->real_escape_string ($val);
         }
         $amount = intval($v['quantity']) * intval($v['draws']) * BLOTTO_TICKET_PRICE;
         $pounds_amount = $amount / 100;
@@ -223,10 +227,10 @@ class PayApi {
            ,`county`='{$v['county']}'
            ,`gdpr`='{$v['gdpr']}'
            ,`terms`='{$v['terms']}'
-           ,`pref_1`='{$v['pref_1']}'
-           ,`pref_2`='{$v['pref_2']}'
-           ,`pref_3`='{$v['pref_3']}'
-           ,`pref_4`='{$v['pref_4']}
+           ,`pref_email` = '{$v['pref_email']}'
+           ,`pref_sms` = '{$v['pref_sms']}'
+           ,`pref_post` = '{$v['pref_post']}'
+           ,`pref_phone` = '{$v['pref_phone']}'
           ;
         ";
         try {
@@ -264,7 +268,7 @@ class PayApi {
             return false;
         }
         // Insert a supporter, a player and a contact
-        signup ($s,PAYPAL_CODE,$s['cref'],$s['first_draw_close']);
+        signup ($this->org,$s,PAYPAL_CODE,$s['cref'],$s['first_draw_close']);
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (PAYPAL_CODE,$s['refno'],$cref,$s['quantity']);
         $draw_first         = new \DateTime ($s['draw_first']);
