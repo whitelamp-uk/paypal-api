@@ -19,7 +19,7 @@ define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', ''  );
 define ( 'DATA8_USERNAME',          ''          );
 define ( 'DATA8_PASSWORD',          ''          );
 define ( 'DATA8_COUNTRY',           'GB'        );
-define ( 'VOODOOSMS',               '/home/blotto/voodoosms/SMS.php' );
+define ( 'VOODOOSMS',               '/home/blotto/voodoosms/SMS.class.php' );
 
 
 // Global - Paypal
