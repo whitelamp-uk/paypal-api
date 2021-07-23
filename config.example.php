@@ -14,8 +14,6 @@ define ( 'PAYPAL_DEV_MODE',         true        );
 // Organisation - all payment providers
 define ( 'BLOTTO_DEV_MODE',         true        );
 efine ( 'CAMPAIGN_MONITOR',        '/path/to/createsend-php/csrest_transactional_smartemail.php' );
-define ( 'CAMPAIGN_MONITOR_KEY',    ''          );
-define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', ''  );
 define ( 'DATA8_USERNAME',          ''          );
 define ( 'DATA8_PASSWORD',          ''          );
 define ( 'DATA8_COUNTRY',           'GB'        );
