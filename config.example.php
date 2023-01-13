@@ -5,7 +5,6 @@ define ( 'BLOTTO_PAY_API_PAYPAL',           '/path/to/paypal-api/PayApi.php' );
 define ( 'BLOTTO_PAY_API_PAYPAL_CLASS',     '\Blotto\Paypal\PayApi'         );
 define ( 'BLOTTO_PAY_API_PAYPAL_BUY',       true        ); // Provide integration
 define ( 'PAYPAL_EMAIL',            'paypal.account@my.domain'              );
-define ( 'PAYPAL_CODE',             'PYPL'      ); // CCC and Provider
 define ( 'PAYPAL_ERROR_LOG',        false       );
 define ( 'PAYPAL_REFNO_OFFSET',     200000000   );
 define ( 'PAYPAL_DEV_MODE',         true        );
@@ -21,6 +20,7 @@ define ( 'VOODOOSMS',               '/home/blotto/voodoosms/SMS.class.php' );
 
 
 // Global - Paypal
+define ( 'PAYPAL_CODE',             'PYPL'      ); // CCC and Provider
 define ( 'PAYPAL_TABLE_MANDATE',    'blotto_build_mandate'      );
 define ( 'PAYPAL_TABLE_COLLECTION', 'blotto_build_collection'   );
 define ( 'PAYPAL_CALLBACK_TO',      30          ); // Confirmation time-out 
